@@ -1,10 +1,10 @@
-;;; realgud-ipdb.el --- Realgud front-end to ipdb  -*- lexical-binding: t -*-
+;;; realgud-pdbpp.el --- Realgud front-end to pdb++  -*- lexical-binding: t -*-
 
 ;; Author: Rocky Bernstein <rocky@gnu.org>
 ;; Version: 1.0.0
 ;; Package-Type: multi
 ;; Package-Requires: ((realgud "1.5.0") (load-relative "1.3.1") (emacs "25"))
-;; URL: https://github.com/realgud/realgud-ipdb
+;; URL: https://github.com/realgud/realgud-pdbpp
 ;; Compatibility: GNU Emacs 25.x
 
 ;; Copyright (C) 2019, 2020 Free Software Foundation, Inc
@@ -26,8 +26,8 @@
 
 ;;; Commentary:
 
-;; realgud support for the Python ipdb
-;; See https://pypi.org/project/ipdb/
+;; realgud support for the Python pdbpp
+;; See https://github.com/pdbpp/pdbpp
 
 ;;; Code:
 
@@ -37,12 +37,12 @@
 
 (require 'load-relative)
 
-(defgroup realgud-ipdb  nil
-  "Realgud interface to ipdb"
+(defgroup realgud-pdbpp  nil
+  "Realgud interface to pdb++"
   :group 'realgud
   :version "25.1")
 
-(require-relative-list '( "./ipdb/ipdb" ) "realgud-")
+(require-relative-list '( "./pdbpp/pdbpp" ) "realgud-")
 
 (provide-me)
-;;; realgud-ipdb.el ends here
+;;; realgud-pdb++.el ends here

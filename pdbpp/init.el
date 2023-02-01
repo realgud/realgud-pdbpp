@@ -1,4 +1,4 @@
-;; Copyright (C) 2016, 2018-2019 Free Software Foundation, Inc
+;; Copyright (C) 2016, 2018-2019, 2023 Free Software Foundation, Inc
 
 ;; Author: Rocky Bernstein <rocky@gnu.org>
 ;; Author: Sean Farley <sean@farley.io>
@@ -15,7 +15,7 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-;; ipdb: "interactive" debugger extension to Python debugger pdb
+;; pdbpp: "interactive" debugger extension to Python debugger pdb
 
 (eval-when-compile (require 'cl-lib))   ;For setf.
 
@@ -25,7 +25,7 @@
 (defvar realgud-pat-hash)
 (declare-function make-realgud-loc-pat 'realgud-regexp)
 
-(defvar realgud:ipdb-pat-hash (make-hash-table :test 'equal)
+(defvar realgud:pdbpp-pat-hash (make-hash-table :test 'equal)
   "Hash key is the what kind of pattern we want to match:
 backtrace, prompt, etc.  The values of a hash entry is a
 realgud-loc-pat struct")
@@ -36,16 +36,18 @@ realgud-loc-pat struct")
 ;; User-definable variables
 ;;
 
-;; realgud-loc-pat that describes a ipdb location generally shown
+;; realgud-loc-pat that describes a pdbpp location generally shown
 ;; before a command prompt.
 ;;
 ;; Program-location lines look like this:
-;;   > /usr/bin/zonetab2pot.py(15)<module>()
+;;   [0] > /usr/bin/zonetab2pot.py(15)<module>()
 ;; or MS Windows:
-;;   > c:\\mydirectory\\gcd.py(10)<module>
-(setf (gethash "loc" realgud:ipdb-pat-hash)
+;;   [0] > c:\\mydirectory\\gcd.py(10)<module>
+(setf (gethash "loc" realgud:pdbpp-pat-hash)
       (make-realgud-loc-pat
-       :regexp "^> \\(\\(?:[a-zA-Z]:\\)?[-a-zA-Z0-9_/.\\\\ ]+\\)(\\([0-9]+\\))"
+       :regexp "^\\[[0-9]+\\] > \\(\\(?:[a-zA-Z]:\\)?[-a-zA-Z0-9_/.\\\\ ]+\\)(\\([0-9]+\\))"
+       ;; Todo add a frame group in realgud for pattern group 1. That is the first
+       ;; number in [] above.
        :file-group 1
        :line-group 2))
 
@@ -54,25 +56,25 @@ realgud-loc-pat struct")
 ;; associations for them.  This list is used to seed a field of the
 ;; same name in the cmd-info structure inside a command buffer. A user
 ;; may add additional files to the command-buffer's re-ignore-list.
-(setf (gethash "ignore-re-file-list" realgud:ipdb-pat-hash)
+(setf (gethash "ignore-re-file-list" realgud:pdbpp-pat-hash)
       (list realgud-python-ignore-file-re))
 
-(setf (gethash "prompt" realgud:ipdb-pat-hash)
+(setf (gethash "prompt" realgud:pdbpp-pat-hash)
       (make-realgud-loc-pat
-       :regexp   "^ipdb[>] "
+       :regexp   "^(Pdb++) "
        ))
 
 ;;  realgud-loc-pat that describes a Python backtrace line.
-(setf (gethash "lang-backtrace" realgud:ipdb-pat-hash)
+(setf (gethash "lang-backtrace" realgud:pdbpp-pat-hash)
       realgud-python-backtrace-loc-pat)
 
-(setf (gethash "debugger-backtrace" realgud:ipdb-pat-hash)
+(setf (gethash "debugger-backtrace" realgud:pdbpp-pat-hash)
       realgud:python-trepan-backtrace-pat)
 
 ;;  realgud-loc-pat that describes a line a Python "info break" line.
 ;; For example:
 ;; 1   breakpoint    keep y   at /usr/local/bin/trepan3k:7
-(setf (gethash "debugger-breakpoint" realgud:ipdb-pat-hash)
+(setf (gethash "debugger-breakpoint" realgud:pdbpp-pat-hash)
   (make-realgud-loc-pat
    :regexp (format "^%s[ \t]+\\(breakpoint\\)[ \t]+\\(keep\\|del\\)[ \t]+\\(yes\\|no\\)[ \t]+.*at \\(.+\\):%s"
 		   realgud:regexp-captured-num realgud:regexp-captured-num)
@@ -83,16 +85,16 @@ realgud-loc-pat struct")
    :line-group 6))
 
 ;;  realgud-loc-pat that describes location in a pytest error
-(setf (gethash "pytest-error" realgud:ipdb-pat-hash)
+(setf (gethash "pytest-error" realgud:pdbpp-pat-hash)
       realgud-pytest-error-loc-pat)
 
 ;;  realgud-loc-pat that describes location in a flake8 message
-(setf (gethash "flake8-msg" realgud:ipdb-pat-hash)
+(setf (gethash "flake8-msg" realgud:pdbpp-pat-hash)
       realgud-flake8-msg-loc-pat)
 
 ;;  realgud-loc-pat that describes a "breakpoint set" line. For example:
-;;     Breakpoint 1 at /usr/bin/ipdb:7
-(setf (gethash "brkpt-set" realgud:ipdb-pat-hash)
+;;     Breakpoint 1 at /usr/bin/pdbpp:7
+(setf (gethash "brkpt-set" realgud:pdbpp-pat-hash)
       (make-realgud-loc-pat
        :regexp "^Breakpoint \\([0-9]+\\) at[ \t\n]+\\(.+\\):\\([0-9]+\\)\\(\n\\|$\\)"
        :num 1
@@ -101,12 +103,12 @@ realgud-loc-pat struct")
 
 ;; realgud-loc-pat that describes a "delete breakpoint" line
 ;; Python 3 includes a file name and line number; Python 2 doesn't
-(setf (gethash "brkpt-del" realgud:ipdb-pat-hash)
+(setf (gethash "brkpt-del" realgud:pdbpp-pat-hash)
       (make-realgud-loc-pat
        :regexp "^Deleted breakpoint \\([0-9]+\\)"
        :num 1))
 
-(setf (gethash "font-lock-keywords" realgud:ipdb-pat-hash)
+(setf (gethash "font-lock-keywords" realgud:pdbpp-pat-hash)
       '(
 	;; The frame number and first type name, if present.
 	("^\\(->\\|##\\)\\([0-9]+\\) \\(<module>\\)? *\\([a-zA-Z_][a-zA-Z0-9_]*\\)(\\(.+\\))?"
@@ -132,31 +134,31 @@ realgud-loc-pat struct")
 	("\\<\\([a-zA-Z_][a-zA-Z0-9_]*\\)\\.\\([a-zA-Z_][a-zA-Z0-9_]*\\)"
 	 (1 font-lock-type-face)
 	 (2 font-lock-function-name-face))
-	;; (ipdb-frames-match-current-line
-	;;  (0 ipdb-frames-current-frame-face append))
+	;; (pdbpp-frames-match-current-line
+	;;  (0 pdbpp-frames-current-frame-face append))
 	))
 
-(setf (gethash "ipdb" realgud-pat-hash) realgud:ipdb-pat-hash)
+(setf (gethash "pdbpp" realgud-pat-hash) realgud:pdbpp-pat-hash)
 
-(defvar realgud:ipdb-command-hash (make-hash-table :test 'equal)
+(defvar realgud:pdbpp-command-hash (make-hash-table :test 'equal)
   "Hash key is command name like 'finish' and the value is
-the ipdb command to use, like 'return'")
+the pdbpp command to use, like 'return'")
 
-;; Mappings between ipdb-specific names and GUD names
-(setf (gethash "finish"           realgud:ipdb-command-hash) "return")
-(setf (gethash "kill"             realgud:ipdb-command-hash) "quit")
-(setf (gethash "backtrace"        realgud:ipdb-command-hash) "where")
+;; Mappings between pdbpp-specific names and GUD names
+(setf (gethash "finish"           realgud:pdbpp-command-hash) "return")
+(setf (gethash "kill"             realgud:pdbpp-command-hash) "quit")
+(setf (gethash "backtrace"        realgud:pdbpp-command-hash) "where")
 ;; Clear in Python does both the usual “delete” and “clear”
-(setf (gethash "delete"           realgud:ipdb-command-hash) "clear %p")
-(setf (gethash "clear"            realgud:ipdb-command-hash) "clear %X:%l")
+(setf (gethash "delete"           realgud:pdbpp-command-hash) "clear %p")
+(setf (gethash "clear"            realgud:pdbpp-command-hash) "clear %X:%l")
 ;; Use ‘!’ instead of ‘p’, since ‘p’ only works for expressions, not statements
-(setf (gethash "eval"             realgud:ipdb-command-hash) "pp %s")
-(setf (gethash "info-breakpoints" realgud:ipdb-command-hash) "break")
+(setf (gethash "eval"             realgud:pdbpp-command-hash) "pp %s")
+(setf (gethash "info-breakpoints" realgud:pdbpp-command-hash) "break")
 
 ;; Unsupported features:
-(setf (gethash "shell" realgud:ipdb-command-hash) "*not-implemented*")
-(setf (gethash "frame" realgud:ipdb-command-hash) "*not-implemented*")
+(setf (gethash "shell" realgud:pdbpp-command-hash) "*not-implemented*")
+(setf (gethash "frame" realgud:pdbpp-command-hash) "*not-implemented*")
 
-(setf (gethash "ipdb" realgud-command-hash) realgud:ipdb-command-hash)
+(setf (gethash "pdbpp" realgud-command-hash) realgud:pdbpp-command-hash)
 
-(provide-me "realgud--ipdb-")
+(provide-me "realgud--pdbpp-")

@@ -2,7 +2,7 @@
 ;; (test-simple-run "emacs -batch -L %s -l %s" (file-name-directory (locate-library "test-simple.elc")) buffer-file-name)
 
 (require 'test-simple)
-(load-file "../ipdb/init.el")
+(load-file "../pdbpp/init.el")
 (load-file "./regexp-helper.el")
 
 (declare-function __FILE__                       'load-relative)
@@ -14,22 +14,22 @@
 (test-simple-start)
 
 (eval-when-compile
-  (defvar loc-pat)   (defvar prompt-pat) (defvar realgud:ipdb-pat-hash)
+  (defvar loc-pat)   (defvar prompt-pat) (defvar realgud:pdbpp-pat-hash)
   (defvar tb-pat)    (defvar test-text)  (defvar prompt-str)
   (defvar bps-pat)
 )
 
 (set (make-local-variable 'bps-pat)
-      (gethash "brkpt-set" realgud:ipdb-pat-hash))
+      (gethash "brkpt-set" realgud:pdbpp-pat-hash))
 
 (set (make-local-variable 'loc-pat)
-     (gethash "loc"       realgud:ipdb-pat-hash))
+     (gethash "loc"       realgud:pdbpp-pat-hash))
 
 (set (make-local-variable 'prompt-pat)
-      (gethash "prompt"    realgud:ipdb-pat-hash))
+      (gethash "prompt"    realgud:pdbpp-pat-hash))
 
 (set (make-local-variable 'tb-pat)
-      (gethash "lang-backtrace" realgud:ipdb-pat-hash))
+      (gethash "lang-backtrace" realgud:pdbpp-pat-hash))
 
 ;; FIXME: we get a void variable somewhere in here when running
 ;;        even though we define it in lexical-let. Dunno why.
@@ -83,7 +83,7 @@
 ;; 	      (match-string (realgud-loc-pat-line-group loc-pat)
 ;; 			    test-text) "extract line number")
 
-(setq test-text "> /usr/bin/ipython(24)<module>")
+(setq test-text "[0] > /usr/bin/ipython(24)<module>")
 (assert-t (numberp (loc-match test-text loc-pat)) "position location")
 (assert-equal "/usr/bin/ipython"
 	      (match-string (realgud-loc-pat-file-group loc-pat)
@@ -98,9 +98,9 @@
 
 
 (note "prompt matching")
-(set (make-local-variable 'prompt-str) "ipdb> ")
+(set (make-local-variable 'prompt-str) "(Pdb++) ")
 (prompt-match prompt-str nil "debugger prompt: %s")
-(setq prompt-str "ipdb")
+(setq prompt-str "pdb") ; An invalid string
 (assert-nil (numberp (loc-match prompt-str prompt-pat))
 	    (format "%s %s" "invalid debugger prompt"
 		    prompt-str))

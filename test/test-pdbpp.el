@@ -3,12 +3,12 @@
 
 (require 'test-simple)
 (require 'load-relative)
-(load-file "../ipdb/ipdb.el")
+(load-file "../pdbpp/pdbpp.el")
 
 (eval-when-compile (defvar test:run-process-save))
 
-(declare-function ipdb-parse-cmd-args 'realgud:ipdb-core)
-(declare-function realgud:ipdb        'realgud:ipdb)
+(declare-function pdbpp-parse-cmd-args 'realgud:pdbpp-core)
+(declare-function realgud:pdbpp        'realgud:pdbpp)
 (declare-function __FILE__            'load-relative)
 
 (test-simple-start)
@@ -20,20 +20,20 @@
   "Fake realgud:run-process used in testing"
   (note
    (format "%s %s %s" debugger-name script-filename cmd-args))
-  (assert-equal "ipdb" debugger-name "debugger name gets passed")
+  (assert-equal "pdbpp" debugger-name "debugger name gets passed")
   (assert-equal (expand-file-name "./gcd.py") script-filename "file name check")
   (assert-equal '("3" "5") (cddr cmd-args) "command args listified")
   (generate-new-buffer "*cmdbuf-test*")
   )
 
-(note "ipdb-parse-cmd-args")
-(assert-equal (list nil '("ipdb") (list (expand-file-name "foo")) nil)
-	      (ipdb-parse-cmd-args '("ipdb" "foo")))
-(assert-equal (list nil '("ipdb") (list (expand-file-name "program.py") "foo") nil)
-	      (ipdb-parse-cmd-args
-	       '("ipdb" "program.py" "foo")))
+(note "pdbpp-parse-cmd-args")
+(assert-equal (list nil '("pdbpp") (list (expand-file-name "foo")) nil)
+	      (pdbpp-parse-cmd-args '("pdbpp" "foo")))
+(assert-equal (list nil '("pdbpp") (list (expand-file-name "program.py") "foo") nil)
+	      (pdbpp-parse-cmd-args
+	       '("pdbpp" "program.py" "foo")))
 
-(realgud:ipdb "ipdb ./gcd.py 3 5")
+(realgud:pdbpp "pdbpp ./gcd.py 3 5")
 ;; Restore the old value of realgud:run-process
 (fset 'realgud:run-process test:run-process-save)
 

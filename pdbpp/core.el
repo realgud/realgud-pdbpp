@@ -1,4 +1,4 @@
-;; Copyright (C) 2016-2017, 2019 Free Software Foundation, Inc
+;; Copyright (C) 2016-2017, 2019, 2023 Free Software Foundation, Inc
 
 ;; Author: Sean Farley <sean@farley.io>, Rocky Bernstein (rocky@gnu.org)
 
@@ -23,43 +23,43 @@
 
 ;; FIXME: I think the following could be generalized and moved to
 ;; realgud-... probably via a macro.
-(defvar realgud--ipdb-minibuffer-history nil
-  "minibuffer history list for the command `ipdb'.")
+(defvar realgud--pdbpp-minibuffer-history nil
+  "minibuffer history list for the command `pdbpp'.")
 
-(defvar realgud--ipdb-remote-minibuffer-history nil
-  "minibuffer history list for the command `ipdb-remote'.")
+(defvar realgud--pdbpp-remote-minibuffer-history nil
+  "minibuffer history list for the command `pdbpp-remote'.")
 
-(easy-mmode-defmap ipdb-minibuffer-local-map
+(easy-mmode-defmap pdbpp-minibuffer-local-map
   '(("\C-i" . comint-dynamic-complete-filename))
   "Keymap for minibuffer prompting of debugger startup command."
   :inherit minibuffer-local-map)
 
 ;; FIXME: I think this code and the keymaps and history
 ;; variable chould be generalized, perhaps via a macro.
-(defun ipdb-query-cmdline (&optional opt-debugger)
+(defun pdbpp-query-cmdline (&optional opt-debugger)
   (realgud-query-cmdline
-   'ipdb-suggest-invocation
-   ipdb-minibuffer-local-map
-   'realgud--ipdb-minibuffer-history
+   'pdbpp-suggest-invocation
+   pdbpp-minibuffer-local-map
+   'realgud--pdbpp-minibuffer-history
    opt-debugger))
 
 ;; FIXME: I think this code and the keymaps and history
 ;; variable chould be generalized, perhaps via a macro.
-(defun ipdb-remote-query-cmdline ()
+(defun pdbpp-remote-query-cmdline ()
   (realgud-query-cmdline
-   'ipdb-suggest-invocation
-   ipdb-minibuffer-local-map
-   'realgud--ipdb-remote-minibuffer-history
+   'pdbpp-suggest-invocation
+   pdbpp-minibuffer-local-map
+   'realgud--pdbpp-remote-minibuffer-history
    "telnet"))
 
-(defun ipdb-parse-cmd-args (orig-args)
+(defun pdbpp-parse-cmd-args (orig-args)
   "Parse command line ORIG-ARGS for the annotate level and name of script to debug.
 
 ORIG-ARGS should contain a tokenized list of the command line to run.
 
 We return the a list containing:
 * the command processor (e.g. python) and it's arguments if any - a list of strings
-* the name of the debugger given (e.g. ipdb) and its arguments - a list of strings
+* the name of the debugger given (e.g. pdbpp) and its arguments - a list of strings
 * the script name and its arguments - list of strings
 * whether the annotate or emacs option was given ('-A', '--annotate' or '--emacs) - a boolean
 
@@ -68,13 +68,13 @@ For example for the following input:
    '(python2.6 -O -Qold ./gcd.py a b))
 
 we might return:
-   ((\"python2.6\" \"-O\" \"-Qold\") (\"ipdb\") (\"/tmp/gcd.py\" \"a\" \"b\") nil)
+   ((\"python2.6\" \"-O\" \"-Qold\") (\"pdbpp\") (\"/tmp/gcd.py\" \"a\" \"b\") nil)
 
 Note that the script name path has been expanded via `expand-file-name'.
 "
 
   ;; Parse the following kind of pattern:
-  ;;  [python python-options] ipdb ipdb-options script-name script-options
+  ;;  [python python-options] pdbpp pdbpp-options script-name script-options
   (let (
 	(args orig-args)
 	(pair)          ;; temp return from
@@ -83,9 +83,9 @@ Note that the script name path has been expanded via `expand-file-name'.
 	;; since the two args can be run together, e.g. "-C/tmp" or "-C /tmp"
 	;;
 	(python-two-args '())
-	;; ipdb doesn't have any arguments
-	(ipdb-two-args '())
-	(ipdb-opt-two-args '())
+	;; pdbpp doesn't have any arguments
+	(pdbpp-two-args '())
+	(pdbpp-opt-two-args '())
 	(interp-regexp
 	 (if (member system-type (list 'windows-nt 'cygwin 'msdos))
 	     "^python[-0-9.]*\\(.exe\\)?$"
@@ -118,13 +118,13 @@ Note that the script name path has been expanded via `expand-file-name'.
 	  (nconc interpreter-args (car pair))
 	  (setq args (cadr pair))))
 
-      ;; Remove "ipdb" from "ipdb --ipdb-options script
+      ;; Remove "pdbpp" from "pdbpp --pdbpp-options script
       ;; --script-options"
       (setq debugger-name (file-name-sans-extension
 			   (file-name-nondirectory (car args))))
-      (unless (string-match "^\\(ipdb\\|cli.py\\)$" debugger-name)
+      (unless (string-match "^\\(pdbpp\\|cli.py\\)$" debugger-name)
 	(message
-	 "Expecting debugger name `%s' to be `ipdb' or `cli.py'"
+	 "Expecting debugger name `%s' to be `pdbpp' or `cli.py'"
 	 debugger-name))
       (setq debugger-args (list (pop args)))
 
@@ -135,7 +135,7 @@ Note that the script name path has been expanded via `expand-file-name'.
 	   ;; Options with arguments.
 	   ((string-match "^-" arg)
 	    (setq pair (realgud-parse-command-arg
-			args ipdb-two-args ipdb-opt-two-args))
+			args pdbpp-two-args pdbpp-opt-two-args))
 	    (nconc debugger-args (car pair))
 	    (setq args (cadr pair)))
 	   ;; Anything else must be the script to debug.
@@ -144,13 +144,13 @@ Note that the script name path has been expanded via `expand-file-name'.
 	   )))
       (list interpreter-args debugger-args script-args annotate-p))))
 
-(defun ipdb-parse-remote-cmd-args (orig-args)
+(defun pdbpp-parse-remote-cmd-args (orig-args)
     "Parse command line ORIG-ARGS
 ORIG-ARGS should contain a tokenized list of the command line to run.
 
 We return the a list containing:
 * the command processor (e.g. python) and it's arguments if any - a list of strings
-* the name of the debugger given (e.g. ipdb) and its arguments - a list of strings
+* the name of the debugger given (e.g. pdbpp) and its arguments - a list of strings
 * the script name and its arguments - list of strings
 * nil
 
@@ -163,53 +163,53 @@ we might return:
 
 Note that the script name path has been expanded via `expand-file-name'.
 "
-    (list orig-args '("ipdb") nil nil nil)
+    (list orig-args '("pdbpp") nil nil nil)
   )
 
   ;; To silence Warning: reference to free variable
-(defvar realgud--ipdb-command-name)
+(defvar realgud--pdbpp-command-name)
 
-(defun ipdb-remote-suggest-invocation (debugger-name)
-  "Suggest an ipdb command invocation via `realgud-suggest-invocaton'"
+(defun pdbpp-remote-suggest-invocation (debugger-name)
+  "Suggest an pdbpp command invocation via `realgud-suggest-invocaton'"
   "telnet 127.0.0.1 4000")
 
-(defun ipdb-suggest-invocation (debugger-name)
-  "Suggest a ipdb command invocation via `realgud-suggest-invocaton'"
-  (realgud-suggest-invocation (or realgud--ipdb-command-name debugger-name)
-			      realgud--ipdb-minibuffer-history
+(defun pdbpp-suggest-invocation (debugger-name)
+  "Suggest a pdbpp command invocation via `realgud-suggest-invocaton'"
+  (realgud-suggest-invocation (or realgud--pdbpp-command-name debugger-name)
+			      realgud--pdbpp-minibuffer-history
 			      "python" "\\.py"))
 
-(defun ipdb-reset ()
-  "Ipdb cleanup - remove debugger's internal buffers (frame,
+(defun pdbpp-reset ()
+  "Pdbpp cleanup - remove debugger's internal buffers (frame,
 breakpoints, etc.)."
   (interactive)
-  ;; (ipdb-breakpoint-remove-all-icons)
+  ;; (pdbpp-breakpoint-remove-all-icons)
   (dolist (buffer (buffer-list))
-    (when (string-match "\\*ipdb-[a-z]+\\*" (buffer-name buffer))
+    (when (string-match "\\*pdbpp-[a-z]+\\*" (buffer-name buffer))
       (let ((w (get-buffer-window buffer)))
         (when w
           (delete-window w)))
       (kill-buffer buffer))))
 
-;; (defun ipdb-reset-keymaps()
+;; (defun pdbpp-reset-keymaps()
 ;;   "This unbinds the special debugger keys of the source buffers."
 ;;   (interactive)
-;;   (setcdr (assq 'ipdb-debugger-support-minor-mode minor-mode-map-alist)
-;; 	  ipdb-debugger-support-minor-mode-map-when-deactive))
+;;   (setcdr (assq 'pdbpp-debugger-support-minor-mode minor-mode-map-alist)
+;; 	  pdbpp-debugger-support-minor-mode-map-when-deactive))
 
-(defconst realgud--ipdb-complete-script
+(defconst realgud--pdbpp-complete-script
   (concat
    "from IPython import get_ipython;"
    "comp = '''%s''';"
    "prefix, candidates = get_ipython().Completer.complete(line_buffer = comp);"
    "print(';'.join([prefix] + candidates))"))
 
-(defun realgud--ipdb-backend-complete ()
-  "Send a command to the ipdb buffer and parse the output.
+(defun realgud--pdbpp-backend-complete ()
+  "Send a command to the pdbpp buffer and parse the output.
 
 The idea here is to rely on the
 `comint-redirect-send-command-to-process' function to send a
-python command `realgud--ipdb-complete-script' that will return
+python command `realgud--pdbpp-complete-script' that will return
 the completions for the given input."
   (interactive)
   (let ((buffer (current-buffer))
@@ -221,7 +221,7 @@ the completions for the given input."
     ;; get the input string
     (when (> end-pos start-pos)
       (let* ((input-str (buffer-substring-no-properties start-pos end-pos))
-             (command-str (format realgud--ipdb-complete-script input-str))
+             (command-str (format realgud--pdbpp-complete-script input-str))
              (output-str (with-temp-buffer
                            (comint-redirect-send-command-to-process
                             command-str (current-buffer) process nil t)
@@ -234,17 +234,17 @@ the completions for the given input."
              (prefix (car output-values)))
         (list (- end-pos (length prefix)) end-pos (cdr output-values))))))
 
-(defun realgud--ipdb-completion-at-point ()
-  (let ((ipdb (realgud--ipdb-backend-complete)))
-    (when ipdb
-      (list (nth 0 ipdb)
-            (nth 1 ipdb)
-            (nth 2 ipdb)
+(defun realgud--pdbpp-completion-at-point ()
+  (let ((pdbpp (realgud--pdbpp-backend-complete)))
+    (when pdbpp
+      (list (nth 0 pdbpp)
+            (nth 1 pdbpp)
+            (nth 2 pdbpp)
             :exclusive 'yes))))
 
-(defun realgud--ipdb-customize ()
-  "Use `customize' to edit the settings of the `ipdb' debugger."
+(defun realgud--pdbpp-customize ()
+  "Use `customize' to edit the settings of the `pdbpp' debugger."
   (interactive)
-  (customize-group 'realgud--ipdb))
+  (customize-group 'realgud--pdbpp))
 
-(provide-me "realgud--ipdb-")
+(provide-me "realgud--pdbpp-")

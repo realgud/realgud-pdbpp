@@ -1,4 +1,4 @@
-;; Copyright (C) 2016, 2019 Free Software Foundation, Inc
+;; Copyright (C) 2016, 2019, 2023 Free Software Foundation, Inc
 
 ;; Author: Rocky Bernstein <rocky@gnu.org>
 ;; Author: Sean Farley <sean@farley.io>
@@ -16,16 +16,16 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;  `ipdb' Main interface to ipdb via Emacs
+;;  `pdbpp' Main interface to pdbpp via Emacs
 (require 'load-relative)
 
 (require 'realgud)
-(require-relative-list '("core" "track-mode") "realgud--ipdb-")
+(require-relative-list '("core" "track-mode") "realgud--pdbpp-")
 
 ;; This is needed, or at least the docstring part of it is needed to
 ;; get the customization menu to work in Emacs 24.
-(defgroup realgud:ipdb nil
-  "The realgud interface to the Python ipdb debugger"
+(defgroup realgud:pdbpp nil
+  "The realgud interface to the Python pdbpp debugger"
   :group 'realgud
   :version "25.1")
 
@@ -35,32 +35,32 @@
 ;; User-definable variables
 ;;
 
-(defcustom realgud--ipdb-command-name
-  "ipdb"
+(defcustom realgud--pdbpp-command-name
+  "pdbpp"
   "File name for executing the stock Python debugger and command options.
 This should be an executable on your path, or an absolute file name."
   :type 'string
-  :group 'realgud:ipdb)
+  :group 'realgud:pdbpp)
 ;; -------------------------------------------------------------------
 ;; The end.
 ;;
 
-(declare-function ipdb-track-mode       'realgud:ipdb-track)
-(declare-function ipdb-query-cmdline    'realgud:ipdb-core)
-(declare-function ipdb-parse-cmd-args   'realgud:ipdb-core)
-(declare-function realgud--ipdb-completion-at-point 'realgud:ipdb-core)
+(declare-function pdbpp-track-mode       'realgud:pdbpp-track)
+(declare-function pdbpp-query-cmdline    'realgud:pdbpp-core)
+(declare-function pdbpp-parse-cmd-args   'realgud:pdbpp-core)
+(declare-function realgud--pdbpp-completion-at-point 'realgud:pdbpp-core)
 (declare-function realgud:run-debugger 'realgud:run)
 
 ;;;###autoload
-(defun realgud:ipdb (&optional opt-cmd-line no-reset)
-  "Invoke the ipdb Python debugger and start the Emacs user interface.
+(defun realgud:pdbpp (&optional opt-cmd-line no-reset)
+  "Invoke the pdbpp Python debugger and start the Emacs user interface.
 
-String OPT-CMD-LINE specifies how to run ipdb. You will be prompted
+String OPT-CMD-LINE specifies how to run pdbpp. You will be prompted
 for a command line is one isn't supplied.
 
 OPT-COMMAND-LINE is treated like a shell string; arguments are
 tokenized by `split-string-and-unquote'. The tokenized string is
-parsed by `ipdb-parse-cmd-args' and path elements found by that
+parsed by `pdbpp-parse-cmd-args' and path elements found by that
 are expanded using `realgud:expand-file-name-if-exists'.
 
 Normally, command buffers are reused when the same debugger is
@@ -72,31 +72,31 @@ marginal icons is reset. See `loc-changes-clear-buffer' to clear
 fringe and marginal icons.
 "
   (interactive)
-  (let ((cmd-buf (realgud:run-debugger "ipdb" 'ipdb-query-cmdline
-                                       'ipdb-parse-cmd-args
-                                       'realgud--ipdb-minibuffer-history
+  (let ((cmd-buf (realgud:run-debugger "pdbpp" 'pdbpp-query-cmdline
+                                       'pdbpp-parse-cmd-args
+                                       'realgud--pdbpp-minibuffer-history
                                        opt-cmd-line no-reset))
         )
     (add-hook 'completion-at-point-functions
-              'realgud--ipdb-completion-at-point nil t)
+              'realgud--pdbpp-completion-at-point nil t)
     (with-current-buffer cmd-buf
       (add-hook 'completion-at-point-functions
-		'realgud--ipdb-completion-at-point nil t)
+		'realgud--pdbpp-completion-at-point nil t)
       )
     cmd-buf)
   )
 
 
 ;;;###autoload
-(defun realgud:ipdb-remote (&optional opt-cmd-line no-reset)
-  "Invoke the ipdb Python debugger and start the Emacs user interface.
+(defun realgud:pdbpp-remote (&optional opt-cmd-line no-reset)
+  "Invoke the pdbpp Python debugger and start the Emacs user interface.
 
-String OPT-CMD-LINE specifies how to run ipdb. You will be prompted
+String OPT-CMD-LINE specifies how to run pdbpp. You will be prompted
 for a command line is one isn't supplied.
 
 OPT-COMMAND-LINE is treated like a shell string; arguments are
 tokenized by `split-string-and-unquote'. The tokenized string is
-parsed by `ipdb-parse-remote-cmd-args' and path elements found by that
+parsed by `pdbpp-parse-remote-cmd-args' and path elements found by that
 are expanded using `realgud:expand-file-name-if-exists'.
 
 Normally, command buffers are reused when the same debugger is
@@ -108,18 +108,18 @@ marginal icons is reset. See `loc-changes-clear-buffer' to clear
 fringe and marginal icons.
 "
   (interactive)
-  (let ((cmd-buf (realgud:run-debugger "ipdb" 'ipdb-remote-query-cmdline
-                                       'ipdb-parse-remote-cmd-args
-                                       'realgud--ipdb-remote-minibuffer-history
-                                       opt-cmd-line no-reset "remote-ipdb"))
+  (let ((cmd-buf (realgud:run-debugger "pdbpp" 'pdbpp-remote-query-cmdline
+                                       'pdbpp-parse-remote-cmd-args
+                                       'realgud--pdbpp-remote-minibuffer-history
+                                       opt-cmd-line no-reset "remote-pdbpp"))
         )
     (add-hook 'completion-at-point-functions
-              'realgud--ipdb-completion-at-point nil t)
+              'realgud--pdbpp-completion-at-point nil t)
     cmd-buf)
   )
 
 
 ;;;###autoload
-(defalias 'ipdb 'realgud:ipdb)
+(defalias 'pdbpp 'realgud:pdbpp)
 
 (provide-me "realgud-")
