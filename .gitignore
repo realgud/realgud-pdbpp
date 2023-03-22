@@ -5,6 +5,7 @@
 /.byebug_history
 /.python-version
 /.ruby-version
+/ChangeLog
 /README
 /aclocal.m4
 /autom4te.cache
@@ -13,6 +14,7 @@
 /config.status
 /configure
 /configure.lineno
+/dist
 /elpa
 /install-sh
 /missing
